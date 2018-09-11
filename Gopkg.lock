@@ -144,6 +144,22 @@
 
 [[projects]]
   branch = "master"
+  digest = "1:b287a7f6a0aa8a60d3564d0a2962c8969a426146f4d034911d80da1fd6230e3f"
+  name = "github.com/influxdata/flux"
+  packages = [
+    ".",
+    "ast",
+    "interpreter",
+    "iocounter",
+    "parser",
+    "semantic",
+    "values",
+  ]
+  pruneopts = "UT"
+  revision = "ce29263893eec4ed7c557c6bd1917ed98411afe0"
+
+[[projects]]
+  branch = "master"
   digest = "1:ac08c9f0449762095e72fcf636b8b2cfd1e16fea10d4f69776efddc95dc3a7be"
   name = "github.com/influxdata/influxql"
   packages = [
@@ -152,6 +168,14 @@
   ]
   pruneopts = "UT"
   revision = "c661ab7db8ad858626cc7a2114e786f4e7463564"
+
+[[projects]]
+  branch = "master"
+  digest = "1:51cfe42717e107a95b5adef2b5186885aa27c37e594eaece44077f4a05fea80d"
+  name = "github.com/influxdata/platform"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "5f51d9ca02b62d3f15c32ce7eff7fb942f0030de"
 
 [[projects]]
   branch = "master"
@@ -234,6 +258,18 @@
   version = "v1.0.1"
 
 [[projects]]
+  digest = "1:d4d60a22dc6c84bf1f8d2991cddcb98fb25f433f8a856fb6888fc21885998a13"
+  name = "github.com/mna/pigeon"
+  packages = [
+    ".",
+    "ast",
+    "builder",
+  ]
+  pruneopts = "UT"
+  revision = "9df264905d4734c0133161d8c67828ff522b154a"
+  version = "v1.0.0"
+
+[[projects]]
   branch = "master"
   digest = "1:c22fdadfe2de0e1df75987cac34f1c721157dc24f180c76b4ef66a3c9637a799"
   name = "github.com/mschoch/smat"
@@ -276,6 +312,14 @@
   pruneopts = "UT"
   revision = "bb6d471dc95d4fe11e432687f8b70ff496cf3136"
   version = "v1.0.0"
+
+[[projects]]
+  digest = "1:40e195917a951a8bf867cd05de2a46aaf1806c50cf92eebf4c16f78cd196f747"
+  name = "github.com/pkg/errors"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "645ef00459ed84a119197bfb8d8205042c6df63d"
+  version = "v0.8.0"
 
 [[projects]]
   digest = "1:70f78dea42b8c0ff38ecf5487eaa79006fa2193fc804fc7c1d7222745d9e2522"
@@ -530,6 +574,7 @@
     "github.com/golang/snappy",
     "github.com/google/go-cmp/cmp",
     "github.com/google/go-cmp/cmp/cmpopts",
+    "github.com/influxdata/flux",
     "github.com/influxdata/influxql",
     "github.com/influxdata/usage-client/v1",
     "github.com/jsternberg/zap-logfmt",
