@@ -15,24 +15,24 @@ import (
 // 		fmt.Printf("%08b\n", v)
 // 	case []byte:
 // 		for i, v := range v {
-// 			fmt.Printf("%d %08b\n", i, v)
+// 			fmt.Printf("%[1]d %08[2]b (%[2]d)\n", i, v)
 // 		}
 // 	case uint64:
 // 		for i := uint64(0); i < 8; i++ {
-// 			fmt.Printf("%d %08b\n", i, uint8(v>>(56-i*8)))
+// 			fmt.Printf("%[1]d %08[2]b (%[2]d)\n", i, uint8(v>>(56-i*8)))
 // 		}
 // 	case int64:
 // 		for i := uint64(0); i < 8; i++ {
-// 			fmt.Printf("%d %08b\n", i, uint8(v>>(56-i*8)))
+// 			fmt.Printf("%[1]d %08[2]b (%[2]d)\n", i, uint8(v>>(56-i*8)))
 // 		}
 // 	case int:
 // 		for i := uint64(0); i < 8; i++ {
-// 			fmt.Printf("%d %08b\n", i, uint8(v>>(56-i*8)))
+// 			fmt.Printf("%[1]d %08[2]b (%[2]d)\n", i, uint8(v>>(56-i*8)))
 // 		}
 // 	case float64:
 // 		u := math.Float64bits(v)
 // 		for i := uint64(0); i < 8; i++ {
-// 			fmt.Printf("%d %08b\n", i, uint8(u>>(56-i*8)))
+// 			fmt.Printf("%[1]d %08[2]b (%[2]d)\n", i, uint8(u>>(56-i*8)))
 // 		}
 // 	default:
 // 		panic(fmt.Sprintf("can't handle type %T", x))
