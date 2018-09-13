@@ -12,6 +12,7 @@ import (
 	"io/ioutil"
 	"log"
 	"math"
+	"mime"
 	"net/http"
 	"os"
 	"runtime/debug"
@@ -24,6 +25,10 @@ import (
 	"github.com/dgrijalva/jwt-go"
 	"github.com/gogo/protobuf/proto"
 	"github.com/golang/snappy"
+	"github.com/influxdata/flux"
+	"github.com/influxdata/flux/control"
+	"github.com/influxdata/flux/csv"
+	"github.com/influxdata/flux/lang"
 	"github.com/influxdata/influxdb"
 	"github.com/influxdata/influxdb/logger"
 	"github.com/influxdata/influxdb/models"
@@ -37,6 +42,7 @@ import (
 	"github.com/influxdata/influxdb/tsdb"
 	"github.com/influxdata/influxdb/uuid"
 	"github.com/influxdata/influxql"
+	pquery "github.com/influxdata/platform/query"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"go.uber.org/zap"
 )
@@ -112,6 +118,11 @@ type Handler struct {
 
 	Store Store
 
+	// Flux services
+	csvDialect       csv.Dialect
+	Controller       *control.Controller
+	CompilerMappings flux.CompilerMappings
+
 	Config    *Config
 	Logger    *zap.Logger
 	CLFLogger *log.Logger
@@ -131,6 +142,9 @@ func NewHandler(c Config) *Handler {
 		CLFLogger:      log.New(os.Stderr, "[httpd] ", 0),
 		stats:          &Statistics{},
 		requestTracker: NewRequestTracker(),
+		csvDialect: csv.Dialect{
+			ResultEncoderConfig: csv.DefaultEncoderConfig(),
+		},
 	}
 
 	// Limit the number of concurrent & enqueued write requests.
@@ -171,6 +185,10 @@ func NewHandler(c Config) *Handler {
 		Route{
 			"prometheus-read", // Prometheus remote read
 			"POST", "/api/v1/prom/read", true, true, h.servePromRead,
+		},
+		Route{
+			"flux-read", // Prometheus remote read
+			"POST", "/v2/query", true, true, h.serveFluxQuery,
 		},
 		Route{ // Ping
 			"ping",
@@ -1090,6 +1108,87 @@ func (h *Handler) servePromRead(w http.ResponseWriter, r *http.Request, user met
 	}
 
 	atomic.AddInt64(&h.stats.QueryRequestBytesTransmitted, int64(len(compressed)))
+}
+
+func (h *Handler) serveFluxQuery(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	ct := r.Header.Get("Content-Type")
+	mt, _, err := mime.ParseMediaType(ct)
+	if err != nil {
+		h.httpError(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	var fc lang.FluxCompiler
+	switch mt {
+	case "application/vnd.flux":
+		if d, err := ioutil.ReadAll(r.Body); err != nil {
+			h.httpError(w, err.Error(), http.StatusBadRequest)
+			return
+		} else {
+			fc.Query = string(d)
+		}
+	default:
+		if err := json.NewDecoder(r.Body).Decode(&fc); err != nil {
+			h.httpError(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+	}
+
+	var req pquery.Request
+	req.Compiler = fc
+	ctx = pquery.ContextWithRequest(ctx, &req)
+
+	q, err := h.Controller.Query(ctx, fc)
+	if err != nil {
+		h.httpError(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	defer func() {
+		q.Cancel()
+		q.Done()
+	}()
+
+	// Setup headers
+	//stats, hasStats := results.(flux.Statisticser)
+	//if hasStats {
+	//	w.Header().Set("Trailer", statsTrailer)
+	//}
+
+	// NOTE: We do not write out the headers here.
+	// It is possible that if the encoding step fails
+	// that we can write an error header so long as
+	// the encoder did not write anything.
+	// As such we rely on the http.ResponseWriter behavior
+	// to write an StatusOK header with the first write.
+
+	switch r.Header.Get("Accept") {
+	case "text/csv":
+		fallthrough
+	default:
+		h.csvDialect.SetHeaders(w)
+		encoder := h.csvDialect.Encoder()
+		results := flux.NewResultIteratorFromQuery(q)
+		n, err := encoder.Encode(w, results)
+		if err != nil {
+			results.Cancel()
+			if n == 0 {
+				// If the encoder did not write anything, we can write an error header.
+				h.httpError(w, err.Error(), http.StatusInternalServerError)
+			}
+		}
+	}
+
+	//if hasStats {
+	//	data, err := json.Marshal(stats.Statistics())
+	//	if err != nil {
+	//		h.Logger.Info("Failed to encode statistics", zap.Error(err))
+	//		return
+	//	}
+	//	// Write statisitcs trailer
+	//	w.Header().Set(statsTrailer, string(data))
+	//}
 }
 
 // serveExpvar serves internal metrics in /debug/vars format over HTTP.
