@@ -81,3 +81,10 @@ man/*.1.gz
 
 # vendored files
 /vendor
+
+# Mac UI
+.DS_Store
+
+# IDE
+.idea
+
