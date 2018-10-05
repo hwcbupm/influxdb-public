@@ -51,7 +51,7 @@ def data_gen():
                 if not self.socket:
                     self.connect()
                 self.socket.send("put " + data + "\n")
-                prwaint data
+                print data
             except socket.error:
                 self.socket.close()
                 self.socket = None
